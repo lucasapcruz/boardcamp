@@ -1,5 +1,5 @@
 import { Router } from "express";
 
-const choiceRoute = Router();
+const genericRoute = Router();
 
-export default choiceRoute;
+export default genericRoute;
