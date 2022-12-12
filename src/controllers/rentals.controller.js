@@ -22,18 +22,18 @@ export async function createGameRent(req, res) {
             return
         }
 
-        const rentsForTheGame =  await connection.query('SELECT COUNT(*) FROM rentals WHERE "gameId"=$1',
-        [gameId])
+        const rentsForTheGame = await connection.query('SELECT COUNT(*) FROM rentals WHERE "gameId"=$1',
+            [gameId])
 
         const gameHasAvailableSets = game.rows[0].stockTotal > rentsForTheGame.rows[0].count
 
-        if(!gameHasAvailableSets){
+        if (!gameHasAvailableSets) {
             res.sendStatus(400)
             return
         }
 
         const rentDate = new Date()
-        const originalPrice = daysRented*game.rows[0].pricePerDay
+        const originalPrice = daysRented * game.rows[0].pricePerDay
         const returnDate = null
         const delayFee = null
 
@@ -43,6 +43,55 @@ export async function createGameRent(req, res) {
 
 
         res.sendStatus(201);
+    } catch (error) {
+        res.sendStatus(500);
+    }
+}
+
+export async function getRents(req, res) {
+    const {customerId, gameId} = req.query
+    console.log(customerId)
+    console.log(gameId)
+
+    try {
+
+        let rentsQuery =
+            'SELECT ' +
+            'rentals.*, ' +
+            "json_build_object('id', customer.id, 'name', customer.name) AS customer, " +
+            "json_build_object('id', game.id, 'name', game.name, 'categoryId', game.\"categoryId\", 'categoryName', game.\"categoryName\") AS game " +
+            'FROM ' +
+            'rentals ' +
+            'JOIN ( ' +
+            'SELECT ' +
+            'customers.id, ' +
+            'customers.name ' +
+            'FROM ' +
+            'customers) AS customer ON ' +
+            'rentals."customerId" = customer.id ' +
+            'JOIN ( ' +
+            'SELECT ' +
+            'games.id, ' +
+            'games.name, ' +
+            'games."categoryId", ' +
+            'categories.name AS "categoryName" ' +
+            'FROM ' +
+            'games ' +
+            'JOIN categories ON ' +
+            'games."categoryId" = categories.id) AS game ON ' +
+            'rentals."gameId" = game.id '
+
+        if(customerId){
+            rentsQuery += `WHERE rentals."customerId" = ${customerId}`
+        }
+
+        if(gameId){
+            rentsQuery += `WHERE rentals."gameId" = ${gameId}`
+        }
+
+        const rents = await connection.query(rentsQuery)
+
+        res.status(200).send(rents.rows);
     } catch (error) {
         res.sendStatus(500);
     }
