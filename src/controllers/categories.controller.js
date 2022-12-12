@@ -20,3 +20,14 @@ export async function createCategory(req, res) {
         res.sendStatus(500);
     }
 }
+
+export async function getCategories(req, res) {
+
+    try {
+        const categories = await connection.query("SELECT * FROM categories")
+
+        res.status(200).send(categories.rows);
+    } catch (error) {
+        res.sendStatus(500);
+    }
+}
