@@ -33,3 +33,22 @@ export async function createGame(req, res) {
         res.sendStatus(500);
     }
 }
+
+export async function getGames(req, res) {
+    const {name} = req.query
+
+    try {
+
+        let games
+
+        if(name){
+            games = await connection.query("SELECT * FROM games WHERE name ILIKE $1", [`${name}%`])
+        }else{
+            games = await connection.query("SELECT * FROM games")
+        }
+
+        res.status(200).send(games.rows);
+    } catch (error) {
+        res.sendStatus(500);
+    }
+}
