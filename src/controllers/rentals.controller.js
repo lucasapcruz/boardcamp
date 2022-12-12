@@ -1,5 +1,6 @@
 import { connection } from "../database/database.js";
-import { formatDate } from "../library/dateHandlers.js";
+import { millsToDays } from "../library/dateHandlers.js";
+import dayjs from "dayjs"
 
 export async function createGameRent(req, res) {
     const { customerId, gameId, daysRented } = req.body;
@@ -49,7 +50,7 @@ export async function createGameRent(req, res) {
 }
 
 export async function getRents(req, res) {
-    const {customerId, gameId} = req.query
+    const { customerId, gameId } = req.query
 
     try {
 
@@ -79,11 +80,11 @@ export async function getRents(req, res) {
             'games."categoryId" = categories.id) AS game ON ' +
             'rentals."gameId" = game.id '
 
-        if(customerId){
+        if (customerId) {
             rentsQuery += `WHERE rentals."customerId" = ${customerId}`
         }
 
-        if(gameId){
+        if (gameId) {
             rentsQuery += `WHERE rentals."gameId" = ${gameId}`
         }
 
@@ -97,20 +98,60 @@ export async function getRents(req, res) {
 
 
 export async function deleteRent(req, res) {
-    const {id} = req.params
+    const { id } = req.params
 
     try {
 
         const rent = await connection.query('SELECT * FROM rentals WHERE id=$1',
             [id])
 
-        if(!rent){
+        if (!rent) {
             res.sendStatus(404)
             return
         }
 
         await connection.query('DELETE FROM rentals WHERE id = $1',
             [id])
+
+        res.sendStatus(200);
+    } catch (error) {
+        res.sendStatus(500);
+    }
+}
+
+export async function returnGame(req, res) {
+    const { id } = req.params
+
+    try {
+
+        const rent = await connection.query('SELECT * FROM rentals WHERE id=$1',
+            [id])
+
+        if (!rent.rows.length) {
+            res.sendStatus(404)
+            return
+        }
+
+        const isGameReturned = rent.rows[0].returnDate
+
+        if(isGameReturned){
+            res.sendStatus(400)
+            return
+        }
+
+        const returnDate = new Date()
+        const returnDateInMills = dayjs(returnDate).valueOf()
+        const rentDateInMills = dayjs(rent.rows[0].rentDate).valueOf()
+        const daysOfDelay = millsToDays(returnDateInMills - rentDateInMills)
+        let delayFee = null
+
+        if(daysOfDelay){
+            delayFee = daysOfDelay*1500
+        }
+
+        await connection.query('UPDATE rentals SET "returnDate"=$1, "delayFee"=$2 WHERE id=$3',
+            [returnDate, delayFee, id])
+
 
         res.sendStatus(200);
     } catch (error) {
