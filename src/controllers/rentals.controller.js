@@ -105,7 +105,7 @@ export async function deleteRent(req, res) {
         const rent = await connection.query('SELECT * FROM rentals WHERE id=$1',
             [id])
 
-        if (!rent) {
+        if (!rent.rows.length) {
             res.sendStatus(404)
             return
         }
