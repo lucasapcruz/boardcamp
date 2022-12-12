@@ -50,8 +50,6 @@ export async function createGameRent(req, res) {
 
 export async function getRents(req, res) {
     const {customerId, gameId} = req.query
-    console.log(customerId)
-    console.log(gameId)
 
     try {
 
