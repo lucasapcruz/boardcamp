@@ -94,3 +94,26 @@ export async function getRents(req, res) {
         res.sendStatus(500);
     }
 }
+
+
+export async function deleteRent(req, res) {
+    const {id} = req.params
+
+    try {
+
+        const rent = await connection.query('SELECT * FROM rentals WHERE id=$1',
+            [id])
+
+        if(!rent){
+            res.sendStatus(404)
+            return
+        }
+
+        await connection.query('DELETE FROM rentals WHERE id = $1',
+            [id])
+
+        res.sendStatus(200);
+    } catch (error) {
+        res.sendStatus(500);
+    }
+}
